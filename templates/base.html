@@ -80,21 +80,23 @@
 <body>
 
     <div class="header">
-    <div class="brand" style="display:flex; align-items:center; gap:10px;">
-        <img src="{{ url_for('static', filename='img/uml01.png') }}" alt="City of Laredo" style="height:40px;">
-        <span>Video Footage Request Portal</span>
+        <div class="brand" style="display:flex; align-items:center; gap:10px;">
+            <img src="{{ url_for('static', filename='img/uml01.png') }}" alt="City of Laredo" style="height:40px;">
+            <span>Video Footage Request Portal</span>
+        </div>
+        <div class="nav">
+            <a href="/">Home</a>
+            <a href="{{ url_for('requestor_dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('new_request') }}">New Request</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
     </div>
-    <div class="nav">
-        <a href="/">Home</a>
-        <a href="{{ url_for('requestor_dashboard') }}">Dashboard</a>
-        <a href="{{ url_for('new_request') }}">New Request</a>
-        <a href="{{ url_for('logout') }}">Logout</a>
-    </div>
-</div>
 
     <div class="container">
         {% block content %}{% endblock %}
     </div>
+
+    {% block scripts %}{% endblock %}
 
 </body>
 </html>

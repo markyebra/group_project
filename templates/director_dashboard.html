@@ -33,19 +33,24 @@
         <td>{{ r["submitted_at"] }}</td>
         <td>
           {% if r["status"] == "Pending" %}
-            <form method="post" action="{{ url_for('update_request_status', request_id=r['id']) }}" style="display:inline;">
-              <button type="submit" name="action" value="approve">
+            <form method="post" action="{{ url_for('update_request_status', request_id=r['id']) }}" class="decision-form">
+              <input type="hidden" name="action" value="">
+              <input type="hidden" name="director_comment" value="">
+
+              <button type="button" onclick="handleDecision(this.form, 'approve')">
                 Approve
               </button>
-            </form>
 
-            <form method="post" action="{{ url_for('update_request_status', request_id=r['id']) }}" style="display:inline;">
-              <button type="submit" name="action" value="decline">
+              <button type="button" onclick="handleDecision(this.form, 'decline')">
                 Deny
               </button>
             </form>
           {% else %}
             <span>Reviewed</span>
+            {% if r["director_comment"] %}
+              <br>
+              <small><strong>Comment:</strong> {{ r["director_comment"] }}</small>
+            {% endif %}
           {% endif %}
         </td>
       </tr>
@@ -54,4 +59,41 @@
   {% else %}
     <p>No requests yet.</p>
   {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function handleDecision(form, actionType) {
+    let comment = "";
+
+    if (actionType === "approve") {
+      if (!confirm("Are you sure you want to approve this request?")) {
+        return;
+      }
+
+      comment = prompt("Optional: add a comment for this approval:", "") || "";
+    } else if (actionType === "decline") {
+      if (!confirm("Are you sure you want to deny this request?")) {
+        return;
+      }
+
+      comment = prompt("Please enter a reason for denial:", "");
+
+      if (comment === null) {
+        return;
+      }
+
+      comment = comment.trim();
+
+      if (comment === "") {
+        alert("A denial reason is required.");
+        return;
+      }
+    }
+
+    form.elements["action"].value = actionType;
+    form.elements["director_comment"].value = comment;
+    form.submit();
+  }
+</script>
 {% endblock %}

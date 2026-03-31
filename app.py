@@ -198,6 +198,7 @@ def create_app():
                 fr.start_time,
                 fr.end_time,
                 fr.status,
+                fr.director_comment,
                 fr.submitted_at,
                 u.first_name,
                 u.last_name
@@ -213,11 +214,15 @@ def create_app():
     @role_required("director", "admin")
     def update_request_status(request_id):
         action = request.form.get("action", "").strip().lower()
+        director_comment = request.form.get("director_comment", "").strip()
 
         if action not in ["approve", "decline"]:
             flash("Invalid action.", "error")
             return redirect(url_for("director_dashboard"))
-
+        if action == "decline" and not director_comment:
+            flash("Director comment is required when declining a request.", "error")
+            return redirect(url_for("director_dashboard"))
+        
         new_status = "Approved" if action == "approve" else "Denied"
 
         db = get_db()
@@ -242,10 +247,10 @@ def create_app():
         db.execute(
             """
             UPDATE footage_requests
-            SET status = ?
+            SET status = ?, director_comment = ?
             WHERE id = ?
             """,
-            (new_status, request_id)
+            (new_status, director_comment, request_id)
         )
         db.commit()
 

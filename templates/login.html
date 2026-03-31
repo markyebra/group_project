@@ -2,29 +2,40 @@
 
 {% block title %}Login{% endblock %}
 
+{% block container_class %}login-page{% endblock %}
+
 {% block content %}
-  <h1>City of Laredo – Login</h1>
+<div class="card" style="width: 350px; text-align: left;">
+  <h2 style="margin-top: 0;">City of Laredo – Login</h2>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-      <ul>
+      <div style="margin-bottom: 12px;">
         {% for category, msg in messages %}
-          <li><strong>{{ category }}:</strong> {{ msg }}</li>
+          <div style="padding:8px; border-radius:4px; margin-bottom:6px; background:#f8d7da; color:#842029;">
+            <strong>{{ category }}:</strong> {{ msg }}
+          </div>
         {% endfor %}
-      </ul>
+      </div>
     {% endif %}
   {% endwith %}
 
   <form method="post">
     <label>Email</label><br/>
-    <input type="email" name="email" required /><br/><br/>
+    <input type="email" name="email" required style="width:100%; padding:8px; margin-bottom:12px;" />
 
     <label>Password</label><br/>
-    <input type="password" name="password" required /><br/><br/>
+    <input type="password" name="password" required style="width:100%; padding:8px; margin-bottom:16px;" />
 
-    <button type="submit">Login</button>
-    <a href="{{ url_for('create_account') }}">
-    <button type="button">Create Account</button>
+    <button type="submit" style="width:100%; margin-bottom:10px;">
+      Login
+    </button>
+
+    <a href="{{ url_for('create_account') }}" style="text-decoration:none;">
+      <button type="button" style="width:100%;">
+        Create Account
+      </button>
     </a>
   </form>
+</div>
 {% endblock %}

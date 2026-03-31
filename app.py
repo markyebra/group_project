@@ -16,7 +16,36 @@ def create_app():
     def init_db_command():
         init_db()
         print("Initialized the database.")
+    @app.context_processor
+    def inject_user():
+        user = None
 
+        if session.get("user_id"):
+            db = get_db()
+            user = db.execute(
+                """
+                SELECT id, first_name, last_name, email, role, department
+                FROM users
+                WHERE id = ?
+                """,
+                (session["user_id"],)
+            ).fetchone()
+        return dict(current_user=user)
+    
+    @app.route("/account")
+    @login_required
+    def account_details():
+        db = get_db()
+        user = db.execute(
+            """
+            SELECT employee_id, first_name, last_name, email, role, department, created_at
+            FROM users
+            WHERE id = ?
+            """,
+            (session["user_id"],),
+        ).fetchone()
+        return render_template("account_details.html", user=user)    
+        
     @app.route("/")
     def home():
         return redirect(url_for("login"))

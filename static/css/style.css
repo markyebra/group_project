@@ -1,8 +1,6 @@
 /* This centers everything and adds a background color */
 body {
-    /*
-    background-image: url('/static/img/banner.jpg');
-    */
+    
     background-color: rgb(196, 243, 255);
     background-position: center;
     font-family: Arial, sans-serif;

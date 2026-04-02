@@ -1,41 +1,74 @@
 {% extends "base.html" %}
-
 {% block title %}Tech Dashboard{% endblock %}
 
 {% block content %}
-  <h1>My Requests</h1>
+  <h1>Tech Dashboard</h1>
+  <p>Approved requests waiting for delivery.</p>
 
-  <a href="{{ url_for('new_request') }}">
-    <button type="button">Submit New Request</button>
-  </a>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul>
+        {% for category, msg in messages %}
+          <li><strong>{{ category }}:</strong> {{ msg }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
 
   <a href="{{ url_for('logout') }}">
     <button type="button">Logout</button>
   </a>
 
+  <br><br>
 
   {% if requests %}
-    <table border="1" cellpadding="6">
+    <table border="1" cellpadding="8">
       <tr>
         <th>ID</th>
+        <th>Requestor</th>
+        <th>Department</th>
         <th>Camera</th>
         <th>Start</th>
         <th>End</th>
-        <th>Status</th>
-        <th>Submitted</th>
+        <th>Reason</th>
+        <th>Action</th>
       </tr>
-      {% for r in requests %}
+
+      {% for row in requests %}
       <tr>
-        <td>{{ r["id"] }}</td>
-        <td>{{ r["camera_location"] }}</td>
-        <td>{{ r["start_time"] }}</td>
-        <td>{{ r["end_time"] }}</td>
-        <td>{{ r["status"] }}</td>
-        <td>{{ r["submitted_at"] }}</td>
+        <td>{{ row.id }}</td>
+        <td>{{ row.first_name }} {{ row.last_name }}</td>
+        <td>{{ row.department }}</td>
+        <td>{{ row.camera_location }}</td>
+        <td>{{ row.start_time }}</td>
+        <td>{{ row.end_time }}</td>
+        <td>{{ row.reason }}</td>
+        <td>
+  <details>
+    <summary style="cursor:pointer; font-weight:bold;">Deliver</summary>
+    <br>
+
+    <form action="{{ url_for('submit_delivery', request_id=row.id) }}" method="post">
+      <label>Technician Name</label><br>
+      <input type="text" name="technician_name" required><br><br>
+
+      <label>Employee ID</label><br>
+      <input type="text" name="technician_employee_id" required><br><br>
+
+      <label>Folder Password</label><br>
+      <input type="text" name="folder_password" required><br><br>
+
+      <label>Footage Location</label><br>
+      <input type="text" name="footage_location" required><br><br>
+
+      <button type="submit">Mark Completed</button>
+    </form>
+  </details>
+</td>
       </tr>
       {% endfor %}
     </table>
   {% else %}
-    <p>No requests yet.</p>
+    <p>No approved requests available.</p>
   {% endif %}
 {% endblock %}

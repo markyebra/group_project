@@ -4,6 +4,7 @@ from db import close_db, init_db, get_db
 from auth import authenticate, login_required, role_required, log_action
 from werkzeug.security import generate_password_hash
 
+import db
 
 def create_app():
     app = Flask(__name__)
@@ -16,6 +17,7 @@ def create_app():
     def init_db_command():
         init_db()
         print("Initialized the database.")
+
     @app.context_processor
     def inject_user():
         user = None
@@ -38,7 +40,7 @@ def create_app():
         db = get_db()
         user = db.execute(
             """
-            SELECT employee_id, first_name, last_name, email, role, department, created_at
+            SELECT first_name, last_name, email, role, department, created_at
             FROM users
             WHERE id = ?
             """,
@@ -91,6 +93,112 @@ def create_app():
             """
         ).fetchall()
         return render_template("all_users.html", users=rows)
+    
+    @app.route("/admin/all_requests")
+    @login_required
+    @role_required("admin")
+    def all_requests():
+        sort_by = request.args.get("sort_by", "submitted_at")
+        sort_dir = request.args.get("sort_dir", "desc")
+        filter_user_id = request.args.get("user_id", type=int)
+
+        valid_sort_columns = {
+            "id": "r.id",
+            "requestor": "requestor_name",
+            "camera_location": "r.camera_location",
+            "start_time": "r.start_time",
+            "end_time": "r.end_time",
+            "status": "r.status",
+            "submitted_at": "r.submitted_at",
+        }
+
+        if sort_by not in valid_sort_columns:
+            sort_by = "submitted_at"
+        if sort_dir not in ("asc", "desc"):
+            sort_dir = "desc"
+
+        params = []
+        user_filter = ""
+        if filter_user_id:
+            user_filter = "AND r.requestor_id = ?"
+            params.append(filter_user_id)
+
+        db = get_db()
+        requests_rows = db.execute(
+            f"""
+            SELECT
+                r.id,
+                u.first_name || ' ' || u.last_name AS requestor_name,
+                u.email AS requestor_email,
+                r.camera_location,
+                r.start_time,
+                r.end_time,
+                r.reason,
+                r.status,
+                r.submitted_at,
+                r.requestor_id
+            FROM footage_requests r
+            JOIN users u ON r.requestor_id = u.id
+            WHERE r.status != 'Completed' {user_filter}
+            ORDER BY {valid_sort_columns[sort_by]} {sort_dir}
+            """,
+            params,
+        ).fetchall()
+
+        users = db.execute(
+            """
+            SELECT id, first_name || ' ' || last_name AS name
+            FROM users
+            ORDER BY first_name, last_name
+            """
+        ).fetchall()
+
+        return render_template(
+            "all_requests.html",
+            requests=requests_rows,
+            users=users,
+            selected_user_id=filter_user_id,
+            sort_by=sort_by,
+            sort_dir=sort_dir,
+        )
+    @app.route("/admin/delete_user/<int:user_id>", methods=["POST"])
+    @login_required
+    @role_required("admin")
+    def delete_user(user_id):
+        return redirect(url_for("all_users"))
+    
+    
+    @app.route("/tech/request/<int:request_id>/submit_delivery", methods=["POST"])
+    @login_required
+    @role_required("tech", "admin")
+    def submit_delivery(request_id):
+        technician_name = request.form.get("technician_name", "").strip()
+        technician_employee_id = request.form.get("technician_employee_id", "").strip()
+        folder_password = request.form.get("folder_password", "").strip()
+        footage_location = request.form.get("footage_location", "").strip()
+
+        if not all([technician_name, technician_employee_id, folder_password, footage_location]):
+            flash("All fields are required.", "error")
+            return redirect(url_for("tech_dashboard"))
+
+        db = get_db()
+        req = db.execute(
+            "SELECT fr.id FROM footage_requests fr JOIN users u ON fr.requestor_id = u.id WHERE fr.id = ? AND fr.status='Approved' AND u.department = ?",
+            (request_id, session.get("department")),
+        ).fetchone()
+        if not req:
+            flash("Request not available for this tech.", "error")
+            return redirect(url_for("tech_dashboard"))
+
+        db.execute(
+            "INSERT INTO footage_deliveries (request_id, technician_name, technician_employee_id, folder_password, footage_location) VALUES (?, ?, ?, ?, ?)",
+            (request_id, technician_name, technician_employee_id, folder_password, footage_location),
+        )
+        db.execute("UPDATE footage_requests SET status = 'Completed', tech_id = ? WHERE id = ?", (session.get("user_id"), request_id))
+        db.commit()
+
+        flash("Footage delivery details saved successfully.", "success")
+        return redirect(url_for("tech_dashboard"))
 
     @app.route("/admin/dashboard")
     @login_required
@@ -102,7 +210,29 @@ def create_app():
     @login_required
     @role_required("admin", "tech")
     def tech_dashboard():
-        return render_template("tech_dashboard.html")
+        db = get_db()
+
+        rows = db.execute(
+        """
+        SELECT
+            fr.id,
+            fr.camera_location,
+            fr.start_time,
+            fr.end_time,
+            fr.reason,
+            fr.status,
+            fr.submitted_at,
+            u.first_name,
+            u.last_name,
+            u.department
+            FROM footage_requests fr
+            JOIN users u ON fr.requestor_id = u.id
+            WHERE fr.status = 'Approved'
+            ORDER BY fr.submitted_at DESC
+            """
+        ).fetchall()
+
+        return render_template("tech_dashboard.html", requests=rows)
 
     @app.route("/create-account", methods=["GET", "POST"])
     def create_account():
@@ -195,6 +325,7 @@ def create_app():
             return redirect(url_for("requestor_dashboard"))
 
         return render_template("new_request.html")
+
 
     @app.route("/requests/mine")
     @login_required

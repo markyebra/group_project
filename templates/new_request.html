@@ -16,9 +16,38 @@
   {% endwith %}
 
   <form method="post">
-    <label>Camera Location</label><br/>
+
+    <!-- AUTO-FILLED USER INFO -->
+    <label>Employee ID</label><br/>
+    <input type="text" value="{{ current_user.id }}" readonly /><br/><br/>
+
+    <label>First Name</label><br/>
+    <input type="text" value="{{ current_user.first_name }}" readonly /><br/><br/>
+
+    <label>Last Name</label><br/>
+    <input type="text" value="{{ current_user.last_name }}" readonly /><br/><br/>
+
+    <label>Email</label><br/>
+    <input type="text" value="{{ current_user.email }}" readonly /><br/><br/>
+
+    <label>Department</label><br/>
+    <input type="text" value="{{ current_user.department }}" readonly /><br/><br/>
+
+    <!-- NEW REQUIRED FIELDS -->
+    <label>Division</label><br/>
+    <input type="text" name="division" required /><br/><br/>
+
+    <label>Job Title</label><br/>
+    <input type="text" name="job_title" required /><br/><br/>
+
+    <!-- SPLIT CAMERA INFO -->
+    <label>Building</label><br/>
+    <input type="text" name="building" required /><br/><br/>
+
+    <label>Camera Number</label><br/>
     <input type="text" name="camera_location" required /><br/><br/>
 
+    <!-- EXISTING FIELDS -->
     <label>Start Time</label><br/>
     <input type="datetime-local" name="start_time" required /><br/><br/>
 
@@ -30,6 +59,7 @@
 
     <button type="submit">Submit</button>
   </form>
+
   <a href="{{ url_for('requestor_dashboard') }}">
     <button type="button">Go Back</button>
   </a>

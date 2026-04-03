@@ -10,7 +10,11 @@
       <tr>
         <th>ID</th>
         <th>Name</th>
+        <th>Building</th>
         <th>Camera</th>
+        <th>Division</th>
+        <th>Job Title</th>
+        <th>Reason</th>
         <th>Start</th>
         <th>End</th>
         <th>Status</th>
@@ -22,15 +26,23 @@
       <tr>
         <td>{{ r["id"] }}</td>
         <td>{{ r["first_name"] }} {{ r["last_name"] }}</td>
+        <td>{{ r["building"] }}</td>
         <td>{{ r["camera_location"] }}</td>
-        <td>{{ r["start_time"] }}</td>
-        <td>{{ r["end_time"] }}</td>
+        <td>{{ r["division"] }}</td>
+        <td>{{ r["job_title"] }}</td>
+        <td>{{ r["reason"] }}</td>
+        <td>{{ r["start_time"] | pretty_datetime }}</td>
+        <td>{{ r["end_time"] | pretty_datetime }}</td>
         <td>
-          <span class="status-{{ r['status']|lower }}">
-            {{ r["status"] }}
-          </span>
-        </td>
-        <td>{{ r["submitted_at"] }}</td>
+    {% if r["status"] == "Approved" %}
+      <span style="font-weight:bold; color:green;">{{ r["status"] }}</span>
+    {% elif r["status"] == "Denied" %}
+      <span style="font-weight:bold; color:red;">{{ r["status"] }}</span>
+    {% else %}
+      <span style="font-weight:bold; color:black;">{{ r["status"] }}</span>
+    {% endif %}
+  </td>
+        <td>{{ r["submitted_at"] | pretty_datetime }}</td>
         <td>
           {% if r["status"] == "Pending" %}
             <form method="post" action="{{ url_for('update_request_status', request_id=r['id']) }}" class="decision-form">

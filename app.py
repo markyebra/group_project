@@ -1,3 +1,5 @@
+from xml.parsers.expat import errors
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from datetime import datetime
 from db import close_db, init_db, get_db
@@ -12,6 +14,16 @@ def create_app():
     app.config["DATABASE"] = "requests.db"
 
     app.teardown_appcontext(close_db)
+
+    @app.template_filter("pretty_datetime")
+    def pretty_datetime(value):
+        if not value:
+            return ""
+        try:
+            dt = datetime.fromisoformat(value)
+            return dt.strftime("%b %d, %Y %I:%M %p")
+        except Exception:
+            return value
 
     @app.cli.command("init-db")
     def init_db_command():
@@ -68,6 +80,7 @@ def create_app():
             session["user_id"] = user["id"]
             session["role"] = user["role"]
             session["name"] = f"{user['first_name']} {user['last_name']}"
+            session["department"] = user["department"]
 
             log_action("LOGIN_SUCCESS")
             if user["role"] == "admin":
@@ -194,7 +207,10 @@ def create_app():
             "INSERT INTO footage_deliveries (request_id, technician_name, technician_employee_id, folder_password, footage_location) VALUES (?, ?, ?, ?, ?)",
             (request_id, technician_name, technician_employee_id, folder_password, footage_location),
         )
-        db.execute("UPDATE footage_requests SET status = 'Completed', tech_id = ? WHERE id = ?", (session.get("user_id"), request_id))
+        db.execute(
+            "UPDATE footage_requests SET status = 'Completed', tech_id = ?, completed_at = datetime('now') WHERE id = ?",
+            (session.get("user_id"), request_id)
+        )
         db.commit()
 
         flash("Footage delivery details saved successfully.", "success")
@@ -213,18 +229,21 @@ def create_app():
         db = get_db()
 
         rows = db.execute(
-        """
-        SELECT
-            fr.id,
-            fr.camera_location,
-            fr.start_time,
-            fr.end_time,
-            fr.reason,
-            fr.status,
-            fr.submitted_at,
-            u.first_name,
-            u.last_name,
-            u.department
+            """
+            SELECT
+                fr.id,
+                fr.building,
+                fr.division,
+                fr.job_title,
+                fr.camera_location,
+                fr.start_time,
+                fr.end_time,
+                fr.reason,
+                fr.status,
+                fr.submitted_at,
+                u.first_name,
+                u.last_name,
+                u.department
             FROM footage_requests fr
             JOIN users u ON fr.requestor_id = u.id
             WHERE fr.status = 'Approved'
@@ -273,27 +292,36 @@ def create_app():
         )
     
     # ---- Requestor routes ----
+    
     @app.route("/request/new", methods=["GET", "POST"])
     @login_required
     @role_required("requestor", "admin")
     def new_request():
         if request.method == "POST":
+            division = request.form.get("division", "").strip()
+            job_title = request.form.get("job_title", "").strip()
             camera_location = request.form.get("camera_location", "").strip()
             start_time = request.form.get("start_time", "").strip()
             end_time = request.form.get("end_time", "").strip()
             reason = request.form.get("reason", "").strip()
+            building = request.form.get("building", "").strip()
 
             errors = []
+            if not division:
+                errors.append("Division is required.")
+            if not job_title:
+                errors.append("Job title is required.")
             if not camera_location:
-                errors.append("Camera location is required.")
+                errors.append("Camera number is required.")
             if not start_time:
                 errors.append("Start time is required.")
             if not end_time:
                 errors.append("End time is required.")
             if not reason:
                 errors.append("Reason is required.")
+            if not building:
+                errors.append("Building is required.")
 
-            # Validate times
             try:
                 start_dt = datetime.fromisoformat(start_time)
                 end_dt = datetime.fromisoformat(end_time)
@@ -311,10 +339,19 @@ def create_app():
             cur = db.execute(
                 """
                 INSERT INTO footage_requests
-                    (requestor_id, camera_location, start_time, end_time, reason, status)
-                VALUES (?, ?, ?, ?, ?, 'Pending')
+                    (requestor_id, division, job_title, building, camera_location, start_time, end_time, reason, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
                 """,
-                (session["user_id"], camera_location, start_time, end_time, reason),
+                (
+                    session["user_id"],
+                    division,
+                    job_title,
+                    building,
+                    camera_location,
+                    start_time,
+                    end_time,
+                    reason,
+                ),
             )
             db.commit()
 
@@ -334,13 +371,26 @@ def create_app():
         db = get_db()
         rows = db.execute(
             """
-            SELECT id, camera_location, start_time, end_time, status, submitted_at
+            SELECT
+                id,
+                division,
+                job_title,
+                building,
+                camera_location,
+                start_time,
+                end_time,
+                status,
+                director_comment,
+                submitted_at
             FROM footage_requests
             WHERE requestor_id = ?
             ORDER BY submitted_at DESC
             """,
             (session["user_id"],),
         ).fetchall()
+
+        for row in rows:
+            print(dict(row))
 
         return render_template("requestor_dashboard.html", requests=rows)
 
@@ -351,10 +401,13 @@ def create_app():
         db = get_db()
         rows = db.execute(
             """
-
             SELECT
                 fr.id,
+                fr.building,
+                fr.division,
+                fr.job_title,
                 fr.camera_location,
+                fr.reason,
                 fr.start_time,
                 fr.end_time,
                 fr.status,
@@ -407,10 +460,10 @@ def create_app():
         db.execute(
             """
             UPDATE footage_requests
-            SET status = ?, director_comment = ?
+            SET status = ?, director_comment = ?, director_id = ?, decided_at = datetime('now')
             WHERE id = ?
             """,
-            (new_status, director_comment, request_id)
+            (new_status, director_comment, session["user_id"], request_id)
         )
         db.commit()
 

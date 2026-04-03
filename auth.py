@@ -35,7 +35,7 @@ def authenticate(email: str, password: str):
     """
     db = get_db()
     user = db.execute(
-        "SELECT id, first_name, last_name, email, password_hash, role, is_active FROM users WHERE email = ?",
+        "SELECT id, first_name, last_name, email, password_hash, role, department, is_active FROM users WHERE email = ?",
         (email.strip().lower(),),
     ).fetchone()
 

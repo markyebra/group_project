@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS footage_requests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   requestor_id INTEGER NOT NULL,
+  division TEXT,
+  job_title TEXT,
+  building TEXT,
   camera_location TEXT NOT NULL,
   start_time TEXT NOT NULL,
   end_time   TEXT NOT NULL,

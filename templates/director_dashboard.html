@@ -25,7 +25,18 @@
       {% for r in requests %}
       <tr>
         <td>{{ r["id"] }}</td>
-        <td>{{ r["first_name"] }} {{ r["last_name"] }}</td>
+        <td>
+  <details>
+    <summary>{{ r["first_name"] }} {{ r["last_name"] }}</summary>
+    <div style="margin-top: 8px;">
+      <strong>Employee ID:</strong> {{ r["employee_id"] }}<br>
+      <strong>Email:</strong> {{ r["email"] }}<br>
+      <strong>Department:</strong> {{ r["department"] }}<br>
+      <strong>Division:</strong> {{ r["user_division"] }}<br>
+      <strong>Job Title:</strong> {{ r["user_job_title"] }}
+    </div>
+  </details>
+</td>
         <td>{{ r["building"] }}</td>
         <td>{{ r["camera_location"] }}</td>
         <td>{{ r["division"] }}</td>

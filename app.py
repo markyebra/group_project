@@ -38,7 +38,7 @@ def create_app():
             db = get_db()
             user = db.execute(
                 """
-                SELECT id, first_name, last_name, email, role, department
+                SELECT id, employee_id, first_name, last_name, email, role, department, division, job_title
                 FROM users
                 WHERE id = ?
                 """,
@@ -52,11 +52,11 @@ def create_app():
         db = get_db()
         user = db.execute(
             """
-            SELECT first_name, last_name, email, role, department, created_at
+            SELECT employee_id, first_name, last_name, email, role, department, division, job_title, created_at
             FROM users
             WHERE id = ?
             """,
-            (session["user_id"],),
+            (session["user_id"],)
         ).fetchone()
         return render_template("account_details.html", user=user)    
         
@@ -256,24 +256,71 @@ def create_app():
     @app.route("/create-account", methods=["GET", "POST"])
     def create_account():
         if request.method == "POST":
+            employee_id = request.form.get("employee_id", "").strip()
             first_name = request.form.get("first_name", "").strip()
             last_name = request.form.get("last_name", "").strip()
             email = request.form.get("email", "").strip().lower()
             password = request.form.get("password", "")
-            role = request.form.get("role", "")
-            department = request.form.get("department", "")
-            flash("Account created successfully!", "success")
+            role = request.form.get("role", "").strip()
+            department = request.form.get("department", "").strip()
+            division = request.form.get("division", "").strip()
+            job_title = request.form.get("job_title", "").strip()
+
+            errors = []
+
+            if not employee_id:
+                errors.append("Employee ID is required.")
+            if not first_name:
+                errors.append("First name is required.")
+            if not last_name:
+                errors.append("Last name is required.")
+            if not email:
+                errors.append("Email is required.")
+            if not password:
+                errors.append("Password is required.")
+            if role not in ["requestor", "director", "tech", "admin"]:
+                errors.append("A valid role is required.")
+            if not department:
+                errors.append("Department is required.")
+            if not division:
+                errors.append("Division is required.")
+            if not job_title:
+                errors.append("Job title is required.")
+
             db = get_db()
+
+            existing_user = db.execute(
+                """
+                SELECT id
+                FROM users
+                WHERE email = ? OR employee_id = ?
+                """,
+                (email, employee_id)
+            ).fetchone()
+
+            if existing_user:
+                errors.append("An account with that email or employee ID already exists.")
+
+            if errors:
+                for e in errors:
+                    flash(e, "error")
+                return render_template("create_account.html")
 
             pw_hash = generate_password_hash(password, method="pbkdf2:sha256")
 
-            db.execute("""
-                INSERT OR IGNORE INTO users (first_name, last_name, email, password_hash, role, department)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (first_name, last_name, email, pw_hash, role, department))
+            db.execute(
+                """
+                INSERT INTO users
+                    (employee_id, first_name, last_name, email, password_hash, role, department, division, job_title)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (employee_id, first_name, last_name, email, pw_hash, role, department, division, job_title)
+            )
 
             db.commit()
+            flash("Account created successfully!", "success")
             return redirect(url_for("login"))
+
         return render_template("create_account.html")
 
     @app.route("/logout")
@@ -292,78 +339,6 @@ def create_app():
         )
     
     # ---- Requestor routes ----
-    
-    @app.route("/request/new", methods=["GET", "POST"])
-    @login_required
-    @role_required("requestor", "admin")
-    def new_request():
-        if request.method == "POST":
-            division = request.form.get("division", "").strip()
-            job_title = request.form.get("job_title", "").strip()
-            camera_location = request.form.get("camera_location", "").strip()
-            start_time = request.form.get("start_time", "").strip()
-            end_time = request.form.get("end_time", "").strip()
-            reason = request.form.get("reason", "").strip()
-            building = request.form.get("building", "").strip()
-
-            errors = []
-            if not division:
-                errors.append("Division is required.")
-            if not job_title:
-                errors.append("Job title is required.")
-            if not camera_location:
-                errors.append("Camera number is required.")
-            if not start_time:
-                errors.append("Start time is required.")
-            if not end_time:
-                errors.append("End time is required.")
-            if not reason:
-                errors.append("Reason is required.")
-            if not building:
-                errors.append("Building is required.")
-
-            try:
-                start_dt = datetime.fromisoformat(start_time)
-                end_dt = datetime.fromisoformat(end_time)
-                if end_dt <= start_dt:
-                    errors.append("End time must be after start time.")
-            except Exception:
-                errors.append("Invalid date/time format.")
-
-            if errors:
-                for e in errors:
-                    flash(e, "error")
-                return render_template("new_request.html")
-
-            db = get_db()
-            cur = db.execute(
-                """
-                INSERT INTO footage_requests
-                    (requestor_id, division, job_title, building, camera_location, start_time, end_time, reason, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
-                """,
-                (
-                    session["user_id"],
-                    division,
-                    job_title,
-                    building,
-                    camera_location,
-                    start_time,
-                    end_time,
-                    reason,
-                ),
-            )
-            db.commit()
-
-            request_id = cur.lastrowid
-            log_action("REQUEST_SUBMITTED", request_id=request_id)
-
-            flash(f"Request #{request_id} submitted successfully.", "success")
-            return redirect(url_for("requestor_dashboard"))
-
-        return render_template("new_request.html")
-
-
     @app.route("/requests/mine")
     @login_required
     @role_required("requestor", "admin")
@@ -413,14 +388,94 @@ def create_app():
                 fr.status,
                 fr.director_comment,
                 fr.submitted_at,
+                u.employee_id,
                 u.first_name,
-                u.last_name
+                u.last_name,
+                u.email,
+                u.department,
+                u.division AS user_division,
+                u.job_title AS user_job_title
             FROM footage_requests fr
             JOIN users u ON fr.requestor_id = u.id
             ORDER BY fr.submitted_at DESC
             """
         ).fetchall()
         return render_template("director_dashboard.html", requests=rows)
+
+    @app.route("/request/new", methods=["GET", "POST"])
+    @login_required
+    @role_required("requestor", "admin")
+    def new_request():
+        db = get_db()
+
+        user = db.execute(
+            """
+            SELECT employee_id, first_name, last_name, department, division, job_title
+            FROM users
+            WHERE id = ?
+            """,
+            (session["user_id"],)
+        ).fetchone()
+
+        if request.method == "POST":
+            building = request.form.get("building", "").strip()
+            camera_location = request.form.get("camera_location", "").strip()
+            start_time = request.form.get("start_time", "").strip()
+            end_time = request.form.get("end_time", "").strip()
+            reason = request.form.get("reason", "").strip()
+
+            errors = []
+
+            if not building:
+                errors.append("Building is required.")
+            if not camera_location:
+                errors.append("Camera number is required.")
+            if not start_time:
+                errors.append("Start time is required.")
+            if not end_time:
+                errors.append("End time is required.")
+            if not reason:
+                errors.append("Reason is required.")
+
+            try:
+                start_dt = datetime.fromisoformat(start_time)
+                end_dt = datetime.fromisoformat(end_time)
+                if end_dt <= start_dt:
+                    errors.append("End time must be after start time.")
+            except Exception:
+                errors.append("Invalid date/time format.")
+
+            if errors:
+                for e in errors:
+                    flash(e, "error")
+                return render_template("new_request.html", user=user)
+
+            cur = db.execute(
+                """
+                INSERT INTO footage_requests
+                    (requestor_id, division, job_title, building, camera_location, start_time, end_time, reason, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')
+                """,
+                (
+                    session["user_id"],
+                    user["division"],
+                    user["job_title"],
+                    building,
+                    camera_location,
+                    start_time,
+                    end_time,
+                    reason
+                )
+            )
+            db.commit()
+
+            request_id = cur.lastrowid
+            log_action("REQUEST_SUBMITTED", request_id=request_id)
+
+            flash(f"Request #{request_id} submitted successfully.", "success")
+            return redirect(url_for("requestor_dashboard"))
+
+        return render_template("new_request.html", user=user)
 
     @app.route("/director/request/<int:request_id>/update", methods=["POST"])
     @login_required

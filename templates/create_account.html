@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Create Account{% endblock %}
+
 {% block content %}
   <h1>City of Laredo – Account Creation</h1>
 
@@ -14,33 +15,44 @@
   {% endwith %}
 
   <form method="post">
-    <label>First Name</label><br/>
-    <input type="text" name="first_name" required /><br/><br/>
+    <label for="employee_id">Employee ID</label><br/>
+    <input type="text" id="employee_id" name="employee_id" required /><br/><br/>
 
-    <label>Last Name</label><br/>
-    <input type="text" name="last_name" required /><br/><br/>
+    <label for="first_name">First Name</label><br/>
+    <input type="text" id="first_name" name="first_name" required /><br/><br/>
 
-    <label>Email</label><br/>
-    <input type="email" name="email" required /><br/><br/>
+    <label for="last_name">Last Name</label><br/>
+    <input type="text" id="last_name" name="last_name" required /><br/><br/>
 
-    <label>Password</label><br/>
-    <input type="password" name="password" required /><br/><br/>
+    <label for="email">Email</label><br/>
+    <input type="email" id="email" name="email" required /><br/><br/>
 
-    <label>Department</label><br/>
-    <select name="department" required>
+    <label for="password">Password</label><br/>
+    <input type="password" id="password" name="password" required /><br/><br/>
+
+    <label for="department">Department</label><br/>
+    <select id="department" name="department" required>
       <option value="">Select Department</option>
-      <option value="public_safety">Public Safety</option>
-      <option value="transportation">Transportation</option>
-      <option value="utilities">Utilities</option>
-    <select><br/><br/>
+      <option value="Public Safety">Public Safety</option>
+      <option value="Transportation">Transportation</option>
+      <option value="Utilities">Utilities</option>
+    </select><br/><br/>
 
-    <label>Role</label><br/>
-    <select name="role" required>
+    <label for="division">Division</label><br/>
+    <input type="text" id="division" name="division" required /><br/><br/>
+
+    <label for="job_title">Job Title</label><br/>
+    <input type="text" id="job_title" name="job_title" required /><br/><br/>
+
+    <label for="role">Role</label><br/>
+    <select id="role" name="role" required>
       <option value="">Select Role</option>
       <option value="requestor">Employee</option>
       <option value="director">Director</option>
       <option value="tech">Network Team</option>
+      <option value="admin">Admin</option>
     </select><br/><br/>
+
     <button type="submit">Create Account</button>
   </form>
-  {% endblock %}
+{% endblock %}

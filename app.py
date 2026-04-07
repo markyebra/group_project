@@ -407,7 +407,7 @@ def create_app():
     @role_required("requestor", "admin")
     def new_request():
         db = get_db()
-
+        #hello
         user = db.execute(
             """
             SELECT employee_id, first_name, last_name, email, department, division, job_title

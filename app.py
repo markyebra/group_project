@@ -410,7 +410,7 @@ def create_app():
 
         user = db.execute(
             """
-            SELECT employee_id, first_name, last_name, department, division, job_title
+            SELECT employee_id, first_name, last_name, email, department, division, job_title
             FROM users
             WHERE id = ?
             """,
@@ -448,7 +448,7 @@ def create_app():
             if errors:
                 for e in errors:
                     flash(e, "error")
-                return render_template("new_request.html", user=user)
+                return render_template("new_request.html")
 
             cur = db.execute(
                 """
@@ -464,8 +464,8 @@ def create_app():
                     camera_location,
                     start_time,
                     end_time,
-                    reason
-                )
+                    reason,
+                ),
             )
             db.commit()
 
@@ -475,7 +475,7 @@ def create_app():
             flash(f"Request #{request_id} submitted successfully.", "success")
             return redirect(url_for("requestor_dashboard"))
 
-        return render_template("new_request.html", user=user)
+        return render_template("new_request.html")
 
     @app.route("/director/request/<int:request_id>/update", methods=["POST"])
     @login_required

@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block title %}New Footage Request{% endblock %}
 
 {% block content %}
@@ -16,51 +15,21 @@
   {% endwith %}
 
   <form method="post">
+    <label for="building">Building</label><br/>
+    <input type="text" id="building" name="building" required><br/><br/>
 
-    <!-- AUTO-FILLED USER INFO -->
-    <label>Employee ID</label><br/>
-    <input type="text" value="{{ current_user.id }}" readonly /><br/><br/>
+    <label for="camera_location">Camera Number</label><br/>
+    <input type="text" id="camera_location" name="camera_location" required><br/><br/>
 
-    <label>First Name</label><br/>
-    <input type="text" value="{{ current_user.first_name }}" readonly /><br/><br/>
+    <label for="start_time">Start Time</label><br/>
+    <input type="datetime-local" id="start_time" name="start_time" required><br/><br/>
 
-    <label>Last Name</label><br/>
-    <input type="text" value="{{ current_user.last_name }}" readonly /><br/><br/>
+    <label for="end_time">End Time</label><br/>
+    <input type="datetime-local" id="end_time" name="end_time" required><br/><br/>
 
-    <label>Email</label><br/>
-    <input type="text" value="{{ current_user.email }}" readonly /><br/><br/>
-
-    <label>Department</label><br/>
-    <input type="text" value="{{ current_user.department }}" readonly /><br/><br/>
-
-    <!-- NEW REQUIRED FIELDS -->
-    <label>Division</label><br/>
-    <input type="text" name="division" required /><br/><br/>
-
-    <label>Job Title</label><br/>
-    <input type="text" name="job_title" required /><br/><br/>
-
-    <!-- SPLIT CAMERA INFO -->
-    <label>Building</label><br/>
-    <input type="text" name="building" required /><br/><br/>
-
-    <label>Camera Number</label><br/>
-    <input type="text" name="camera_location" required /><br/><br/>
-
-    <!-- EXISTING FIELDS -->
-    <label>Start Time</label><br/>
-    <input type="datetime-local" name="start_time" required /><br/><br/>
-
-    <label>End Time</label><br/>
-    <input type="datetime-local" name="end_time" required /><br/><br/>
-
-    <label>Reason</label><br/>
-    <textarea name="reason" rows="4" cols="40" required></textarea><br/><br/>
+    <label for="reason">Reason</label><br/>
+    <textarea id="reason" name="reason" rows="5" cols="50" required></textarea><br/><br/>
 
     <button type="submit">Submit</button>
   </form>
-
-  <a href="{{ url_for('requestor_dashboard') }}">
-    <button type="button">Go Back</button>
-  </a>
 {% endblock %}

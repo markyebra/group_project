@@ -62,6 +62,20 @@ def create_app():
         
     @app.route("/")
     def home():
+        if not session.get("user_id"):
+            return redirect(url_for("login"))
+
+        role = session.get("role")
+
+        if role == "admin":
+            return redirect(url_for("admin_dashboard"))
+        elif role == "director":
+            return redirect(url_for("director_dashboard"))
+        elif role == "tech":
+            return redirect(url_for("tech_dashboard"))
+        elif role == "requestor":
+            return redirect(url_for("requestor_dashboard"))
+
         return redirect(url_for("login"))
 
     @app.route("/login", methods=["GET", "POST"])

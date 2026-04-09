@@ -16,9 +16,16 @@
             background: white;
             padding: 15px 20px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #ddd;
+        }
+
+        .login-header {
+            justify-content: center;
+        }
+
+        .login-header .brand {
+            justify-content: center;
         }
 
         .brand {
@@ -30,10 +37,16 @@
             gap: 10px;
         }
 
+        .brand img {
+            height: 70px;
+            width: auto;
+        }
+
         .nav {
             display: flex;
             align-items: center;
             gap: 15px;
+            margin-left: auto;
         }
 
         .nav a {
@@ -47,10 +60,11 @@
         }
 
         .login-page {
-            min-height: calc(100vh - 80px);
+            min-height: calc(100vh - 95px);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;   /* 👈 change this */
+            padding-top: 90px; 
         }
 
         .card {
@@ -75,6 +89,10 @@
             border-collapse: collapse;
         }
 
+        input {
+            box-sizing: border-box;
+        }      
+
         th, td {
             padding: 10px;
             border-bottom: 1px solid #ddd;
@@ -95,19 +113,7 @@
             cursor: pointer;
             font-weight: bold;
             color: #17375e;
-        }
-
-        .user-avatar {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            background: #17375e;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: bold;
+            padding: 0;
         }
 
         .dropdown-menu {
@@ -144,30 +150,35 @@
 </head>
 <body>
 
-    <div class="header">
+    <div class="header {% if request.endpoint == 'login' %}login-header{% endif %}">
         <div class="brand">
-            <img src="{{ url_for('static', filename='images/laredo_logo.png') }}" alt="City of Laredo" style="height:40px;">
+            <img src="{{ url_for('static', filename='img/laredo_logo.png') }}" alt="Laredo Logo">
             <span>Video Footage Request Portal</span>
         </div>
 
-        {% if current_user %}
-<div class="nav">
-    <a href="/">Home</a>
-    <a href="{{ url_for('requestor_dashboard') }}">Dashboard</a>
-    <a href="{{ url_for('new_request') }}">New Request</a>
+        {% if request.endpoint != 'login' %}
+        <div class="nav">
+            {% if current_user %}
+                <a href="{{ url_for('home') }}">Home</a>
 
-    <div class="user-menu" id="userMenu">
-        <button type="button" class="user-toggle" onclick="toggleUserMenu()">
-            {{ current_user["first_name"] }} {{ current_user["last_name"] }}
-        </button>
+                <a href="{{ url_for('logout') }}">Logout</a>
 
-        <div class="dropdown-menu">
-            <a href="{{ url_for('account_details') }}">Account Details</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
+                <div class="user-menu" id="userMenu">
+                    <button type="button" class="user-toggle" onclick="toggleUserMenu()">
+                        {{ current_user["first_name"] }} {{ current_user["last_name"] }}
+                    </button>
+
+                    <div class="dropdown-menu">
+                        <a href="{{ url_for('account_details') }}">Account Details</a>
+                        <a href="{{ url_for('logout') }}">Logout</a>
+                    </div>
+                </div>
+            {% else %}
+                <a href="{{ url_for('login') }}">Login</a>
+                <a href="{{ url_for('create_account') }}">Create Account</a>
+            {% endif %}
         </div>
-    </div>
-</div>
-{% endif %}
+        {% endif %}
     </div>
 
     <div class="{% block container_class %}container{% endblock %}">
@@ -177,7 +188,10 @@
     {% block scripts %}
     <script>
         function toggleUserMenu() {
-            document.getElementById("userMenu").classList.toggle("open");
+            const menu = document.getElementById("userMenu");
+            if (menu) {
+                menu.classList.toggle("open");
+            }
         }
 
         window.addEventListener("click", function(event) {

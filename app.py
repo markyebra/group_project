@@ -5,6 +5,7 @@ from datetime import datetime
 from db import close_db, init_db, get_db
 from auth import authenticate, login_required, role_required, log_action
 from werkzeug.security import generate_password_hash
+from email_sender import initial_email_to_employee, send_update_email, send_tech_email, send_final_email
 
 import db
 
@@ -212,6 +213,8 @@ def create_app():
             (session.get("user_id"), request_id)
         )
         db.commit()
+
+        send_final_email(request_id)
 
         flash("Footage delivery details saved successfully.", "success")
         return redirect(url_for("tech_dashboard"))
@@ -468,6 +471,7 @@ def create_app():
                 ),
             )
             db.commit()
+            initial_email_to_employee(session.get("user_id"))
 
             request_id = cur.lastrowid
             log_action("REQUEST_SUBMITTED", request_id=request_id)
@@ -521,6 +525,10 @@ def create_app():
             (new_status, director_comment, session["user_id"], request_id)
         )
         db.commit()
+        
+        send_update_email(request_id)
+        if new_status == "Approved":
+            send_tech_email(request_id)
 
         log_action(f"REQUEST_{new_status.upper()}", request_id=request_id)
         flash(f"Request #{request_id} {new_status.lower()} successfully.", "success")

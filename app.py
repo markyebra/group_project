@@ -364,19 +364,24 @@ def create_app():
         rows = db.execute(
             """
             SELECT
-                id,
-                division,
-                job_title,
-                building,
-                camera_location,
-                start_time,
-                end_time,
-                status,
-                director_comment,
-                submitted_at
-            FROM footage_requests
-            WHERE requestor_id = ?
-            ORDER BY submitted_at DESC
+                fr.id,
+                fr.division,
+                fr.job_title,
+                fr.building,
+                fr.camera_location,
+                fr.start_time,
+                fr.end_time,
+                fr.status,
+                fr.director_comment,
+                fr.submitted_at,
+                fd.technician_name,
+                fd.technician_employee_id,
+                fd.folder_password,
+                fd.footage_location
+            FROM footage_requests fr
+            LEFT JOIN footage_deliveries fd ON fr.id = fd.request_id
+            WHERE fr.requestor_id = ?
+            ORDER BY fr.submitted_at DESC
             """,
             (session["user_id"],),
         ).fetchall()
@@ -385,7 +390,7 @@ def create_app():
             print(dict(row))
 
         return render_template("requestor_dashboard.html", requests=rows)
-
+        
     @app.route("/director/dashboard")
     @login_required
     @role_required("director", "admin")

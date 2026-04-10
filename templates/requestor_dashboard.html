@@ -51,7 +51,15 @@
 
   <td>
     {% if r["status"] == "Completed" %}
-      Ready for viewing
+      <details>
+        <summary style="cursor: pointer;">Ready for viewing</summary>
+        <div style="margin-top: 10px;">
+          <p><strong>Technician:</strong> {{ r["technician_name"] }}</p>
+          <p><strong>Employee ID:</strong> {{ r["technician_employee_id"] }}</p>
+          <p><strong>Folder Password:</strong> {{ r["folder_password"] }}</p>
+          <p><strong>Footage Location:</strong> {{ r["footage_location"] }}</p>
+        </div>
+      </details>
     {% elif r["status"] == "Approved" %}
       Network team is gathering footage
     {% elif r["status"] == "Denied" %}

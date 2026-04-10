@@ -246,7 +246,8 @@ def send_final_email(request_id):
     message_body += f"<li>End: {end_time}</li>"
     message_body += f"<li>Reason: {reason}</li>"
     message_body += f"<li>Department: {nice_department or 'N/A'}</li></ul>"
-    message_body += '<p><a href="http://127.0.0.1:5000/login">Click here to login and view requests</a></p>'
+    message_body += '<p>The Network Technician has added the location of the network share folder and the password to access the folders contents. To find the folder go to your file explorer, go to "Network" on the left hand side. then follow the same path as provided.</p>'
+    message_body += '<p><a href="http://127.0.0.1:5000/login">Click here to login and view the completed request</a></p>'
     message = Mail(
         from_email=FROM_EMAIL,
         to_emails=user_email,

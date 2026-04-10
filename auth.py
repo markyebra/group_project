@@ -49,11 +49,11 @@ def authenticate(email: str, password: str):
     return user
 
 def log_action(action: str, request_id=None):
-    """
-    Basic audit logger (we’ll expand later). Safe even if user not logged in.
-    """
-    db = get_db()
     user_id = session.get("user_id")
+    if user_id is None or request_id is None:
+        return
+
+    db = get_db()
     ip = request.headers.get("X-Forwarded-For", request.remote_addr)
     ua = request.headers.get("User-Agent")
 

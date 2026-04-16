@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}User Account Details{% endblock %}
+
+{% block content %}
+  <h1>User Account Details</h1>
+
+  <p><a href="{{ url_for('all_users') }}">← Back to All Users</a></p>
+
+  <table border="1" cellpadding="8">
+    <tr><th>User ID</th><td>{{ user["id"] }}</td></tr>
+    <tr><th>Employee ID</th><td>{{ user["employee_id"] }}</td></tr>
+    <tr><th>First Name</th><td>{{ user["first_name"] }}</td></tr>
+    <tr><th>Last Name</th><td>{{ user["last_name"] }}</td></tr>
+    <tr><th>Email</th><td>{{ user["email"] }}</td></tr>
+    <tr><th>Role</th><td>{{ user["role"] }}</td></tr>
+    <tr><th>Department</th><td>{{ user["department"] }}</td></tr>
+    <tr><th>Division</th><td>{{ user["division"] }}</td></tr>
+    <tr><th>Job Title</th><td>{{ user["job_title"] }}</td></tr>
+    <tr><th>Is Active</th><td>{{ user["is_active"] }}</td></tr>
+    <tr><th>Created At</th><td>{{ user["created_at"] }}</td></tr>
+  </table>
+{% endblock %}

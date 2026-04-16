@@ -108,6 +108,27 @@ def create_app():
                 return redirect(url_for("requestor_dashboard"))
         return render_template("login.html")
     
+    @app.route("/admin/user/<int:user_id>")
+    @login_required
+    @role_required("admin")
+    def admin_user_details(user_id):
+        db = get_db()
+        user = db.execute(
+            """
+            SELECT id, employee_id, first_name, last_name, email, role,
+                department, division, job_title, is_active, created_at
+            FROM users
+            WHERE id = ?
+            """,
+            (user_id,)
+        ).fetchone()
+
+        if user is None:
+            flash("User not found.", "error")
+            return redirect(url_for("all_users"))
+
+        return render_template("admin_user_details.html", user=user)
+    
     @app.route("/admin/all_users")
     @login_required
     @role_required("admin")
@@ -117,7 +138,7 @@ def create_app():
             """
             SELECT first_name, last_name, email, department, role, is_active, created_at, id
             FROM users
-            ORDER BY first_name DESC
+            ORDER BY created_at DESC
             """
         ).fetchall()
         return render_template("all_users.html", users=rows)
@@ -295,7 +316,7 @@ def create_app():
                 errors.append("Email is required.")
             if not password:
                 errors.append("Password is required.")
-            if role not in ["requestor", "director", "tech", "admin"]:
+            if role not in ["requestor", "director", "tech"]:
                 errors.append("A valid role is required.")
             if not department:
                 errors.append("Department is required.")

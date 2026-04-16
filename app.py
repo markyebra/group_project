@@ -417,8 +417,22 @@ def create_app():
     @role_required("director", "admin")
     def director_dashboard():
         db = get_db()
+
+        selected_status = request.args.get("status", "Pending").strip()
+
+        valid_statuses = ["Pending", "Approved", "Denied", "All"]
+        if selected_status not in valid_statuses:
+            selected_status = "Pending"
+
+        params = []
+        status_filter = ""
+
+        if selected_status != "All":
+            status_filter = "WHERE fr.status = ?"
+            params.append(selected_status)
+
         rows = db.execute(
-            """
+            f"""
             SELECT
                 fr.id,
                 fr.building,
@@ -440,10 +454,17 @@ def create_app():
                 u.job_title AS user_job_title
             FROM footage_requests fr
             JOIN users u ON fr.requestor_id = u.id
+            {status_filter}
             ORDER BY fr.submitted_at DESC
-            """
+            """,
+            params
         ).fetchall()
-        return render_template("director_dashboard.html", requests=rows)
+
+        return render_template(
+            "director_dashboard.html",
+            requests=rows,
+            selected_status=selected_status
+        )
 
     @app.route("/request/new", methods=["GET", "POST"])
     @login_required
@@ -568,7 +589,10 @@ def create_app():
         
         send_update_email(request_id)
         if new_status == "Approved":
-            send_tech_email(request_id)
+            try:
+                send_tech_email(request_id)
+            except Exception as e:
+                print(f"Tech email failed for request {request_id}: {e}")
 
         log_action(f"REQUEST_{new_status.upper()}", request_id=request_id)
         flash(f"Request #{request_id} {new_status.lower()} successfully.", "success")

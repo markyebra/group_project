@@ -3,7 +3,27 @@
 {% block title %}Director Dashboard{% endblock %}
 
 {% block content %}
-  <h1>Requests Pending Approval</h1>
+  <h1>Director Dashboard</h1>
+
+  <div style="margin-bottom: 15px;">
+    <a href="{{ url_for('director_dashboard', status='Pending') }}">
+      <button type="button">Pending</button>
+    </a>
+
+    <a href="{{ url_for('director_dashboard', status='Approved') }}">
+      <button type="button">Approved</button>
+    </a>
+
+    <a href="{{ url_for('director_dashboard', status='Denied') }}">
+      <button type="button">Denied</button>
+    </a>
+
+    <a href="{{ url_for('director_dashboard', status='All') }}">
+      <button type="button">All</button>
+    </a>
+  </div>
+
+  <p>Showing: <strong>{{ selected_status }}</strong></p>
 
   {% if requests %}
     <table border="1" cellpadding="6">
